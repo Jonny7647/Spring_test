@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.test.mapper.TestMapper">
+
+	<insert id="insertMember">
+		insert into test values(#{id}, #{pw}, #{age}, sysdate)
+	</insert>
+
+	<!-- // test 테이블에서 전체 회원의 수를 알고싶다. 
+			resultType : 쿼리문 실행 결과의 컬럼 개수와 데이터 타입에 따라 -->
+	<select id="memberCount" resultType="int">
+		select count(*) from test
+	</select>
+
+	<select id="maxAge" resultType="int">
+		select max(age) from test
+	</select>
+
+	<select id="selectAll" resultType="com.test.model.TestDTO">
+		select * from test
+	</select>
+
+	<!-- id로 그사람 정보 다 가져오기 -->
+	<select id="selectOne" resultType="com.test.model.TestDTO">
+		select * from test where id=#{id}
+	</select>
+
+	<!-- id를 주고 그사람의 회원 가입 날짜가 가져오기 -->
+	<select id="getReg" resultType="java.sql.Timestamp">
+		select reg from test where id=#{id}
+	</select>
+
+	<!-- pw, age 수정 해당 id의 사람꺼 -->
+	<update id="updateMember">
+		update test set pw=#{pw}, age=#{age} where id=#{id}
+	</update>
+
+	
+	<!-- age 파라미터가 넘어오면 해당 age의 count수를 조회,
+		age가 안넘어오면 전체 count수를 조회 -->
+	<select id="selectIf" resultType="int">
+		select count(*) from test 
+		<if test="age != null">
+			where age=#{age}
+		</if>
+	</select>
+
+	<!-- 로그인체크 id, pw / id 존재여부 확인 / 문제점: pw만 보내면 에러발생!!  -->
+	<select id="selectIf2" resultType="int">
+		select count(*) from test 
+		<if test="id != null">
+			where id=#{id} 
+		</if>
+		<if test="pw != null">
+			and pw=#{pw}
+		</if>
+	</select>
+
+	<!-- 문제점 해결방안 #1. -->
+	<select id="selectIf3" resultType="int">
+		select count(*) from test where id=#{id} 
+		<if test="pw != null">
+			and pw=#{pw}
+		</if>
+	</select>
+	
+	<select id="choose" resultType="int" >
+		select count(*) from test where id='spring01' 
+		<choose>
+			<when test="pw != null">
+				and pw='5555' 
+			</when>
+			<when test="age != null">
+				and age = 50
+			</when>
+			<otherwise>
+				<!--  위 조건이 안맞을 경우 else -->
+			</otherwise>
+		</choose>
+	</select>
+
+	<!-- 문제점 해결 방안 #2.  -->
+	<select id="selectTrim" resultType="int" >
+		select count(*) from test 
+		<trim prefix="where" prefixOverrides="and|or" >
+			<if test="id != null">
+				id=#{id}
+			</if>
+			<if test="pw != null">
+				and pw=#{pw}
+			</if>
+		</trim>
+	</select>  
+
+	<!-- update : 회원정보 수정하고싶다. pw, age, email, name, mobile  -->
+	<update id="trimUpdate" >
+		update test 
+		<trim prefix="set" suffixOverrides=",">
+			<if test="pw != null">
+				pw=#{pw},
+			</if>
+			<if test="age != null">
+			 	age=#{age}
+			</if>
+		</trim>
+		where id=#{id}
+	</update>
+	
+	<!-- foreach : ex. age가 list에 들은 값들과 일치하는 레코드 전체 컬럼정보 얻기 
+		ArrayList : [10,20,30]
+	 -->
+	<select id="selectIn" resultType="com.test.model.TestDTO">
+		select * from test where age in 
+		<foreach collection="list" item="item" open="(" separator="," close=")">
+			#{item}
+		</foreach>
+	</select>
+	
+	<!-- selectKey : id,pw는 외부에서 던져주고, 전체 레코드수를 구해서 age값으로 하나의 레코드 추가 -->
+	<insert id="insertSk" >
+		<selectKey keyProperty="age" order="BEFORE" resultType="int">
+			select count(*) from test
+		</selectKey>
+		insert into test values(#{id}, #{pw}, #{age}, sysdate)
+	</insert>
+	
+	<!-- like :  #{} 문자열 ' ' 숫자 10 
+	<select id="selectLike" resultType="com.test.model.TestDTO">
+		select * from test where id like '%'||#{keyword}||'%'
+	</select>-->
+
+	<!-- column 명은 ${} 로 체워준다. #{}로 체우면 문자열이라 홑따옴표가 붙는 쿼리가 되버림  -->
+	<select id="selectLike" resultType="com.test.model.TestDTO">
+		select * from test where ${column} like '%'||#{keyword}||'%'
+	</select>
+
+
+
+
+
+
+
+
+</mapper>
